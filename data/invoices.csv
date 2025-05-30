@@ -1,0 +1,4 @@
+invoice_id,ticket_id,total_amount,paid_status,date
+
+1,1,0,Unpaid,2025-05-30 15:17:04,12.0,0.0
+2,7,0,Paid,2025-05-30 15:17:10,0.0,0.0
