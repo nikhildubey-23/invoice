@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Device - Repair Center{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Device</h2>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="customer_id" class="form-label">Customer</label>
+                    <select class="form-select" id="customer_id" name="customer_id" required>
+                        {% for customer in customers %}
+                        <option value="{{ customer.id }}" {% if customer.id == device.customer_id %}selected{% endif %}>
+                            {{ customer.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="brand" class="form-label">Brand</label>
+                    <input type="text" class="form-control" id="brand" name="brand" value="{{ device.brand }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="model" class="form-label">Model</label>
+                    <input type="text" class="form-control" id="model" name="model" value="{{ device.model }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="serial_number" class="form-label">Serial Number</label>
+                    <input type="text" class="form-control" id="serial_number" name="serial_number" value="{{ device.serial_number }}">
+                </div>
+                <div class="mb-3">
+                    <label for="issue" class="form-label">Issue</label>
+                    <textarea class="form-control" id="issue" name="issue" rows="3">{{ device.issue }}</textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('devices') }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Add Service - Repair Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Add New Service</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_service') }}">
+                        <div class="mb-3">
+                            <label for="ticket_id" class="form-label">Ticket</label>
+                            <select class="form-select" id="ticket_id" name="ticket_id" required>
+                                <option value="">Select Ticket</option>
+                                {% for ticket in tickets %}
+                                <option value="{{ ticket.id }}">
+                                    #{{ ticket.id }} - {{ ticket.device.brand }} {{ ticket.device.model }} ({{ ticket.device.customer.name }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cost" class="form-label">Cost (₹)</label>
+                            <input type="number" class="form-control" id="cost" name="cost" step="0.01" required>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('services') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Services
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Service
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,12 +1,7 @@
 ticket_id,device_id,technician,status,created_date
-1,1,John Doe,Completed,2025-05-30 14:37:14
-2,1,Jane Smith,In Progress,2025-05-30 14:40:14
-3,2,John Doe,Received,2025-05-30 14:43:28
-4,3,John Doe,In Progress,2025-05-30 14:47:24
-5,2,John Doe,Received,2025-05-30 14:52:04
-6,3,Jane Smith,In Progress,2025-05-30 14:52:30
-7,1,John Doe,Completed,2025-05-30 14:56:38
-8,1,John Doe,Completed,2025-05-30 14:59:37
-9,1,Jane Smith,Completed,2025-05-30 15:05:27
-10,3,John Doe,Completed,2025-05-30 15:10:04
-11,1,Jane Smith,Completed,2025-05-30 15:16:45
+
+1,1,Jane Smith,Received,2025-05-31 10:54:00
+2,1,Jane Smith,Completed,2025-05-31 10:54:41
+3,1,Jane Smith,Completed,2025-05-31 10:56:40
+4,1,Jane Smith,Completed,2025-05-31 10:59:17
+5,1,Jane Smith,In Progress,2025-05-31 11:00:26

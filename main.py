@@ -766,43 +766,131 @@ class RepairCenterApp:
         """Load completed tickets into the combo box for invoice creation"""
         try:
             tickets = []
+            debug_info = []
+            
+            # Check if tickets.csv exists
+            if not os.path.exists('data/tickets.csv'):
+                debug_info.append("tickets.csv not found")
+                messagebox.showerror("Error", "tickets.csv file not found. Please create some tickets first.")
+                self.invoice_ticket_combo['values'] = []
+                return
+            
+            # Check if services.csv exists
+            if not os.path.exists('data/services.csv'):
+                debug_info.append("services.csv not found")
+                messagebox.showerror("Error", "services.csv file not found. Please add some services first.")
+                self.invoice_ticket_combo['values'] = []
+                return
+                
+            # Read tickets
             with open('data/tickets.csv', 'r') as f:
                 reader = csv.DictReader(f)
-                for row in reader:
+                tickets_data = list(reader)
+                debug_info.append(f"Total tickets found: {len(tickets_data)}")
+                
+                if len(tickets_data) == 0:
+                    debug_info.append("No tickets found in the system")
+                    messagebox.showwarning("No Tickets", "No tickets found in the system. Please create some tickets first.")
+                    self.invoice_ticket_combo['values'] = []
+                    return
+                
+                # Debug ticket statuses
+                status_counts = {}
+                for ticket in tickets_data:
+                    status = ticket['status']
+                    status_counts[status] = status_counts.get(status, 0) + 1
+                debug_info.append("\nTicket Status Counts:")
+                for status, count in status_counts.items():
+                    debug_info.append(f"- {status}: {count}")
+                
+                # Check if any completed tickets exist
+                if 'Completed' not in status_counts:
+                    debug_info.append("\nNo completed tickets found")
+                    messagebox.showwarning("No Completed Tickets", "No completed tickets found. Please complete some tickets first.")
+                    self.invoice_ticket_combo['values'] = []
+                    return
+                
+                for row in tickets_data:
+                    debug_info.append(f"\nChecking Ticket #{row['ticket_id']}:")
+                    debug_info.append(f"- Status: {row['status']}")
+                    
                     if row['status'] == 'Completed':
                         # Get device and customer info
                         device_info = self.get_device_info(row['device_id'])
                         customer_name = self.get_customer_name(device_info['customer_id'])
+                        debug_info.append(f"- Device: {device_info['brand']} {device_info['model']}")
+                        debug_info.append(f"- Customer: {customer_name}")
                         
                         # Check if ticket already has an invoice
                         has_invoice = False
                         try:
-                            with open('data/invoices.csv', 'r') as i:
-                                invoice_reader = csv.DictReader(i)
-                                for invoice in invoice_reader:
-                                    if invoice['ticket_id'] == row['ticket_id']:
-                                        has_invoice = True
-                                        break
+                            if os.path.exists('data/invoices.csv'):
+                                with open('data/invoices.csv', 'r') as i:
+                                    invoice_reader = csv.DictReader(i)
+                                    for invoice in invoice_reader:
+                                        if invoice['ticket_id'] == row['ticket_id']:
+                                            has_invoice = True
+                                            debug_info.append(f"- Already has an invoice")
+                                            break
                         except FileNotFoundError:
-                            pass
+                            debug_info.append("- No invoices.csv file found")
                         
                         if not has_invoice:
-                            tickets.append(f"Ticket #{row['ticket_id']} - {device_info['brand']} {device_info['model']} ({customer_name})")
+                            # Check if ticket has services
+                            has_services = False
+                            service_count = 0
+                            try:
+                                with open('data/services.csv', 'r') as s:
+                                    service_reader = csv.DictReader(s)
+                                    for service in service_reader:
+                                        if service['ticket_id'] == row['ticket_id']:
+                                            has_services = True
+                                            service_count += 1
+                                    debug_info.append(f"- Services found: {service_count}")
+                            except FileNotFoundError:
+                                debug_info.append("- Error reading services.csv")
+                            
+                            if has_services:
+                                ticket_text = f"Ticket #{row['ticket_id']} - {device_info['brand']} {device_info['model']} ({customer_name})"
+                                tickets.append(ticket_text)
+                                debug_info.append(f"- Added to available tickets list: {ticket_text}")
+                            else:
+                                debug_info.append("- Not added: No services found")
+                    else:
+                        debug_info.append("- Not added: Status is not 'Completed'")
+            
+            # Update the combo box
             self.invoice_ticket_combo['values'] = tickets
+            
+            # If no tickets are available, show debug info
+            if not tickets:
+                debug_message = "No tickets available for invoice generation.\n\nDebug Information:\n" + "\n".join(debug_info)
+                messagebox.showwarning("No Tickets Available", debug_message)
+            else:
+                debug_info.append(f"\nTotal tickets available for invoice generation: {len(tickets)}")
+                print("\n".join(debug_info))  # Print debug info to console for reference
+                
         except FileNotFoundError:
             self.invoice_ticket_combo['values'] = []
+            messagebox.showerror("Error", "Required files not found. Please ensure all data files exist.")
         except Exception as e:
             print(f"Error loading invoice ticket combo: {str(e)}")
             self.invoice_ticket_combo['values'] = []
+            messagebox.showerror("Error", f"Failed to load tickets: {str(e)}")
 
     def get_device_info(self, device_id):
         """Get device information from the device ID"""
         try:
+            if not os.path.exists('data/devices.csv'):
+                print(f"devices.csv not found for device_id: {device_id}")
+                return {'brand': 'Unknown', 'model': 'Unknown', 'customer_id': 'Unknown'}
+                
             with open('data/devices.csv', 'r') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     if row['device_id'] == device_id:
                         return row
+            print(f"No device found for device_id: {device_id}")
             return {'brand': 'Unknown', 'model': 'Unknown', 'customer_id': 'Unknown'}
         except Exception as e:
             print(f"Error getting device info: {str(e)}")
@@ -811,11 +899,16 @@ class RepairCenterApp:
     def get_customer_name(self, customer_id):
         """Get customer name from the customer ID"""
         try:
+            if not os.path.exists('data/customers.csv'):
+                print(f"customers.csv not found for customer_id: {customer_id}")
+                return "Unknown"
+                
             with open('data/customers.csv', 'r') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     if row['customer_id'] == customer_id:
                         return row['name']
+            print(f"No customer found for customer_id: {customer_id}")
             return "Unknown"
         except Exception as e:
             print(f"Error getting customer name: {str(e)}")
@@ -862,7 +955,7 @@ class RepairCenterApp:
             with open('data/services.csv', 'r') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    if row['ticket_id'] != ticket_id:
+                    if row['ticket_id'] not in ticket_ids:
                         services.append(row)
             
             with open('data/services.csv', 'w', newline='') as f:
@@ -875,7 +968,7 @@ class RepairCenterApp:
             with open('data/invoices.csv', 'r') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    if row['ticket_id'] != ticket_id:
+                    if row['ticket_id'] not in ticket_ids:
                         invoices.append(row)
             
             with open('data/invoices.csv', 'w', newline='') as f:
@@ -917,7 +1010,7 @@ class RepairCenterApp:
         self.service_desc.grid(row=1, column=1, padx=5, pady=5)
         
         # Cost
-        ttk.Label(form_frame, text="Cost ($):").grid(row=2, column=0, padx=5, pady=5)
+        ttk.Label(form_frame, text="Cost (₹):").grid(row=2, column=0, padx=5, pady=5)
         self.service_cost = ttk.Entry(form_frame)
         self.service_cost.grid(row=2, column=1, padx=5, pady=5)
         
@@ -1030,7 +1123,7 @@ class RepairCenterApp:
         self.tax_rate.grid(row=1, column=1, padx=5, pady=5)
         
         # Discount
-        ttk.Label(left_frame, text="Discount ($):").grid(row=2, column=0, padx=5, pady=5)
+        ttk.Label(left_frame, text="Discount (₹):").grid(row=2, column=0, padx=5, pady=5)
         self.discount = ttk.Entry(left_frame)
         self.discount.insert(0, "0")
         self.discount.grid(row=2, column=1, padx=5, pady=5)
@@ -1054,7 +1147,7 @@ class RepairCenterApp:
         right_frame.pack(side='right', fill='both', expand=True, padx=5, pady=5)
         
         # Amount
-        ttk.Label(right_frame, text="Amount ($):").grid(row=0, column=0, padx=5, pady=5)
+        ttk.Label(right_frame, text="Amount (₹):").grid(row=0, column=0, padx=5, pady=5)
         self.manual_amount = ttk.Entry(right_frame)
         self.manual_amount.insert(0, "0")
         self.manual_amount.grid(row=0, column=1, padx=5, pady=5)
@@ -1066,14 +1159,14 @@ class RepairCenterApp:
         self.manual_tax_rate.grid(row=1, column=1, padx=5, pady=5)
         
         # Manual Discount
-        ttk.Label(right_frame, text="Discount ($):").grid(row=2, column=0, padx=5, pady=5)
+        ttk.Label(right_frame, text="Discount (₹):").grid(row=2, column=0, padx=5, pady=5)
         self.manual_discount = ttk.Entry(right_frame)
         self.manual_discount.insert(0, "0")
         self.manual_discount.grid(row=2, column=1, padx=5, pady=5)
         
         # Total Amount (Read-only)
-        ttk.Label(right_frame, text="Total Amount ($):").grid(row=3, column=0, padx=5, pady=5)
-        self.total_amount_var = tk.StringVar(value="$0.00")
+        ttk.Label(right_frame, text="Total Amount (₹):").grid(row=3, column=0, padx=5, pady=5)
+        self.total_amount_var = tk.StringVar(value="₹0.00")
         self.total_amount_label = ttk.Label(right_frame, textvariable=self.total_amount_var, font=('Helvetica', 10, 'bold'))
         self.total_amount_label.grid(row=3, column=1, padx=5, pady=5)
         
@@ -1131,7 +1224,7 @@ class RepairCenterApp:
             total = max(0, total)
             
             # Update total amount label
-            self.total_amount_var.set(f"${total:.2f}")
+            self.total_amount_var.set(f"₹{total:.2f}")
             
         except ValueError:
             messagebox.showerror("Error", "Please enter valid numbers for amount, tax rate, and discount!")
@@ -1154,7 +1247,7 @@ class RepairCenterApp:
         self.manual_tax_rate.insert(0, "0")
         self.manual_discount.delete(0, tk.END)
         self.manual_discount.insert(0, "0")
-        self.total_amount_var.set("$0.00")
+        self.total_amount_var.set("₹0.00")
         
         # Reload ticket combo to ensure it's up to date
         self.load_invoice_ticket_combo()
@@ -1226,10 +1319,10 @@ class RepairCenterApp:
                             final_total = max(0, final_total)  # Ensure total is not negative
                             
                             # Format the total amount with 2 decimal places
-                            formatted_amount = f"${final_total:.2f}"
+                            formatted_amount = f"₹{final_total:.2f}"
                         except Exception as e:
                             print(f"Error calculating final total: {str(e)}")
-                            formatted_amount = f"${total_amount:.2f}"
+                            formatted_amount = f"₹{total_amount:.2f}"
                         
                         # Get the actual paid status from the invoice record
                         paid_status = row['paid_status']
@@ -1379,7 +1472,7 @@ class RepairCenterApp:
         self.total_tickets_var = tk.StringVar(value="Total Tickets: 0")
         self.completed_tickets_var = tk.StringVar(value="Completed Tickets: 0")
         self.total_invoices_var = tk.StringVar(value="Total Invoices: 0")
-        self.total_revenue_var = tk.StringVar(value="Total Revenue: $0.00")
+        self.total_revenue_var = tk.StringVar(value="Total Revenue: ₹0.00")
         
         # Add labels to frame
         ttk.Label(stats_frame, textvariable=self.total_customers_var, font=('Helvetica', 10, 'bold')).pack(pady=5)
@@ -1443,7 +1536,7 @@ class RepairCenterApp:
                             print(f"Error calculating revenue: {str(e)}")
             
             self.total_invoices_var.set(f"Total Invoices: {total_invoices}")
-            self.total_revenue_var.set(f"Total Revenue: ${total_revenue:.2f}")
+            self.total_revenue_var.set(f"Total Revenue: ₹{total_revenue:.2f}")
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update statistics: {str(e)}")
@@ -1513,7 +1606,7 @@ class RepairCenterApp:
                         ticket_info['device'],
                         ticket_info['customer'],
                         row['description'],
-                        f"${float(row['cost']):.2f}"
+                        f"₹{float(row['cost']):.2f}"
                     ))
         except FileNotFoundError:
             pass
@@ -1556,6 +1649,10 @@ class RepairCenterApp:
             # Extract ticket ID from the combo box selection
             ticket_id = ticket.split("Ticket #")[1].split(" -")[0]
             
+            # Debug information
+            debug_info = []
+            debug_info.append(f"Selected Ticket ID: {ticket_id}")
+            
             # Validate tax rate and discount are numbers
             try:
                 tax_rate = float(tax_rate)
@@ -1566,14 +1663,40 @@ class RepairCenterApp:
             
             # Calculate total amount from services
             total_amount = 0
+            services_list = []
+            
+            # Check if services.csv exists
+            if not os.path.exists('data/services.csv'):
+                messagebox.showerror("Error", "Services file not found! Please add services first.")
+                return
+                
             try:
                 with open('data/services.csv', 'r') as f:
                     reader = csv.DictReader(f)
+                    services = list(reader)
+                    debug_info.append(f"Total services in file: {len(services)}")
+                    
                     for row in reader:
                         if row['ticket_id'] == ticket_id:
-                            total_amount += float(row['cost'])
+                            service_cost = float(row['cost'])
+                            total_amount += service_cost
+                            services_list.append({
+                                'description': row['description'],
+                                'cost': service_cost
+                            })
+                            debug_info.append(f"Found service: {row['description']} - ₹{service_cost}")
             except FileNotFoundError:
-                pass
+                messagebox.showerror("Error", "Services file not found! Please add services first.")
+                return
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to calculate services total: {str(e)}")
+                return
+            
+            if total_amount == 0:
+                # Show debug information
+                debug_message = "No services found for this ticket!\n\nDebug Information:\n" + "\n".join(debug_info)
+                messagebox.showerror("Error", debug_message)
+                return
             
             # Calculate tax and final total
             tax_amount = total_amount * (tax_rate / 100)
@@ -1598,25 +1721,25 @@ class RepairCenterApp:
                 writer.writerow({
                     'invoice_id': invoice_id,
                     'ticket_id': ticket_id,
-                    'total_amount': final_total,
+                    'total_amount': str(final_total),  # Convert to string to ensure proper storage
                     'paid_status': payment_status,
                     'date': current_date,
-                    'tax_rate': tax_rate,
-                    'discount': discount
+                    'tax_rate': str(tax_rate),
+                    'discount': str(discount)
                 })
             
             # Generate PDF invoice
-            self.generate_invoice_pdf(invoice_id, ticket_id, final_total, tax_rate, discount, payment_status, current_date)
+            self.generate_invoice_pdf(invoice_id, ticket_id, final_total, tax_rate, discount, payment_status, current_date, services_list)
             
             # Clear form and refresh list
             self.clear_invoice_form()
             self.load_invoices()
             
-            messagebox.showinfo("Success", f"Invoice #{invoice_id} has been generated.")
+            messagebox.showinfo("Success", f"Invoice #{invoice_id} has been generated.\nTotal Amount: ₹{final_total:.2f}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate invoice: {str(e)}")
 
-    def generate_invoice_pdf(self, invoice_id, ticket_id, total_amount, tax_rate, discount, payment_status, date):
+    def generate_invoice_pdf(self, invoice_id, ticket_id, total_amount, tax_rate, discount, payment_status, date, services_list):
         """Generate a PDF invoice"""
         try:
             # Get ticket info
@@ -1650,20 +1773,22 @@ class RepairCenterApp:
             
             # Add services table
             services_data = [['Description', 'Cost']]
-            try:
-                with open('data/services.csv', 'r') as f:
-                    reader = csv.DictReader(f)
-                    for row in reader:
-                        if row['ticket_id'] == ticket_id:
-                            services_data.append([row['description'], f"${float(row['cost']):.2f}"])
-            except FileNotFoundError:
-                pass
             
-            # Add tax and discount rows
-            services_data.append(['Subtotal', f"${total_amount:.2f}"])
-            services_data.append(['Tax', f"${total_amount * (tax_rate / 100):.2f}"])
-            services_data.append(['Discount', f"-${discount:.2f}"])
-            services_data.append(['Total', f"${total_amount + (total_amount * (tax_rate / 100)) - discount:.2f}"])
+            # Add services from the list
+            subtotal = 0
+            for service in services_list:
+                services_data.append([service['description'], f"₹{service['cost']:.2f}"])
+                subtotal += service['cost']
+            
+            # Calculate tax and total
+            tax_amount = subtotal * (tax_rate / 100)
+            final_total = subtotal + tax_amount - discount
+            
+            # Add summary rows
+            services_data.append(['Subtotal', f"₹{subtotal:.2f}"])
+            services_data.append(['Tax', f"₹{tax_amount:.2f}"])
+            services_data.append(['Discount', f"-₹{discount:.2f}"])
+            services_data.append(['Total', f"₹{final_total:.2f}"])
             
             # Create table
             table = Table(services_data)

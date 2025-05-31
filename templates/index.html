@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Repair Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="display-4 mb-4">Welcome to Repair Center</h1>
+                    <p class="lead">Your one-stop solution for device repairs and maintenance.</p>
+                    <div class="mt-4">
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt"></i> Login to Continue
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

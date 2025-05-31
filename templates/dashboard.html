@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Repair Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Dashboard</h1>
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card stat-card bg-primary text-white">
+                <i class="fas fa-users"></i>
+                <h3>{{ total_customers }}</h3>
+                <p>Total Customers</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-success text-white">
+                <i class="fas fa-mobile-alt"></i>
+                <h3>{{ total_devices }}</h3>
+                <p>Total Devices</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-info text-white">
+                <i class="fas fa-ticket-alt"></i>
+                <h3>{{ total_tickets }}</h3>
+                <p>Total Tickets</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card bg-warning text-white">
+                <i class="fas fa-file-invoice"></i>
+                <h3>{{ total_invoices }}</h3>
+                <p>Total Invoices</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue and Completion Rate -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Revenue</h5>
+                    <h2 class="text-success">₹{{ "%.2f"|format(total_revenue) }}</h2>
+                    <p class="text-muted">Total revenue from all invoices</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Completion Rate</h5>
+                    <h2 class="text-primary">{{ "%.1f"|format((completed_tickets / total_tickets * 100) if total_tickets > 0 else 0) }}%</h2>
+                    <p class="text-muted">Completed tickets vs total tickets</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Actions</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="{{ url_for('add_customer') }}" class="btn btn-outline-primary w-100 mb-2">
+                                <i class="fas fa-user-plus"></i> Add Customer
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('add_device') }}" class="btn btn-outline-success w-100 mb-2">
+                                <i class="fas fa-mobile-alt"></i> Add Device
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('add_ticket') }}" class="btn btn-outline-info w-100 mb-2">
+                                <i class="fas fa-ticket-alt"></i> Create Ticket
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('generate_invoice') }}" class="btn btn-outline-warning w-100 mb-2">
+                                <i class="fas fa-file-invoice"></i> Generate Invoice
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

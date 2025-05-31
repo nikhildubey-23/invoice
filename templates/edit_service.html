@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Service - Repair Center{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Service</h2>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3" required>{{ service.description }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="cost" class="form-label">Cost (₹)</label>
+                    <input type="number" step="0.01" class="form-control" id="cost" name="cost" value="{{ service.cost }}" required>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('services') }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 
